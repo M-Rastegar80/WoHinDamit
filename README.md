@@ -1,7 +1,7 @@
 # WoHinDamit?
 
 Smart Recycling Vienna
-WoHinDamit? ist eine Webanwendung, die Nutzerinnen und Nutzern in Wien hilft, Gegenstände sinnvoll witeryuverwenden, yu reparieren, yu spenden oder richtig yu entsorgen.
+WoHinDamit? ist eine Webanwendung, die Nutzerinnen und Nutzern in Wien hilft, Gegenstände sinnvoll witer zu erwenden, zu reparieren, zu spenden oder richtig zu entsorgen.
 
 ## Projekt
 
