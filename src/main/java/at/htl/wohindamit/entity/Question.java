@@ -1,15 +1,14 @@
 package at.htl.wohindamit.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "questions")
@@ -38,4 +37,8 @@ public class Question extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @OneToMany(mappedBy = "question")
+    @Builder.Default
+    private List<AnswerOption> answerOptions = new ArrayList<>();
 }
