@@ -27,7 +27,7 @@ public class Recommendation extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean active = true;
-    
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)
     private Action action;
