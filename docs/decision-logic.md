@@ -249,3 +249,77 @@ beste passende Regel
 Empfehlung
     +
 Begründung
+
+13. Technische Festlegungen
+
+13.1 Speicherung der Regeln
+
+Die Entscheidungsregeln werden in der PostgreSQL-Datenbank gespeichert.
+Sie werden nicht ausschließlich im Java-Quellcode definiert.
+
+13.2 Bedingungen
+
+Die Bedingungen einer Regel werden als JSONB gespeichert.
+
+Beispiel:
+
+{
+"repairable": true,
+"functional": false
+}
+
+13.3 Ermittlung passender Regeln
+
+Bei einer Anfrage werden nur aktive Regeln berücksichtigt.
+
+Eine Regel passt, wenn:
+
+- die Kategorie des Gegenstands zur Kategorie der Regel passt, sofern eine Kategorie angegeben ist,
+- der konkrete Gegenstand zur Regel passt, sofern ein Item angegeben ist,
+- alle Bedingungen der Regel erfüllt sind.
+
+13.4 Priorität
+
+Wenn mehrere Regeln passen, wird die Regel mit der höheren Priorität bevorzugt.
+
+Dabei gilt:
+
+1 = höchste Priorität
+2 = zweite Priorität
+3 = dritte Priorität
+4 = niedrigste Priorität
+
+Bei gleicher Priorität wird eine spezifischere Regel bevorzugt.
+Eine Regel für einen konkreten Gegenstand ist spezifischer als eine allgemeine Kategorie-Regel.
+
+13.5 Ergebnis
+
+Die ausgewählte Regel liefert:
+
+- action
+- reason
+- priority
+
+Beispiel:
+
+{
+"action": "REPAIR",
+"reason": "Der Gegenstand ist reparierbar.",
+"priority": 1
+}
+
+13.6 Keine passende Regel
+
+Wenn keine passende Regel gefunden wird, wird keine Empfehlung erfunden.
+
+Stattdessen wird ein Fallback-Ergebnis zurückgegeben:
+
+{
+"action": null,
+"reason": "Für diesen Gegenstand konnte keine passende Regel gefunden werden."
+}
+
+13.7 Erweiterbarkeit
+
+Neue Kategorien, Gegenstände und Regeln sollen über die Datenbank ergänzt werden können,
+ohne die grundlegende Entscheidungslogik im Backend ändern zu müssen.
