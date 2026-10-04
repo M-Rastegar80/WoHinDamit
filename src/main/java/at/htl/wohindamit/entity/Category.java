@@ -21,7 +21,13 @@ public class Category extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private Long parentId;
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private Category parent;
+
+    @OneToMany(mappedBy = "parent")
+    @Builder.Default
+    private List<Category> children = new ArrayList<>();
 
     @Column(nullable = false)
     private Boolean active = true;
