@@ -35,4 +35,8 @@ public class Item extends BaseEntity {
     @OneToMany(mappedBy = "item")
     @Builder.Default
     private List<Rule> rules = new ArrayList<>();
+
+    @OneToMany(mappedBy = "item")
+    @Builder.Default
+    private List<ItemLocation> itemLocations = new ArrayList<>();
 }
