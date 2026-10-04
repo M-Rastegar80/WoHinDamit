@@ -396,20 +396,64 @@ externe Datenquellen nachvollziehbar speichern
 
 Erweiterungen ermöglichen
 
-16. Noch zu prüfen
+16. Technische Festlegungen
 
-Vor der Implementierung müssen folgende Punkte technisch festgelegt werden:
+Für die erste Implementierung werden folgende technische Entscheidungen getroffen:
 
-konkretes Datenbankmanagementsystem
+Datenbankmanagementsystem
 
-Integer oder UUID als ID
+Als Datenbankmanagementsystem wird PostgreSQL verwendet.
 
-genaue JSON-Struktur von Rule.conditions
+IDs
 
-genaue Berechnung der Entfernung
+Alle Entitäten verwenden eine numerische ID vom Typ Long.
+In PostgreSQL werden die IDs als BIGINT gespeichert und automatisch generiert.
 
-Indexierung der Standortkoordinaten
+Rule.conditions
 
-Importstrategie für externe Daten
+Die Bedingungen einer Entscheidungsregel werden als JSONB in PostgreSQL gespeichert.
 
-Aktualisierungsintervall der externen Daten
+Beispiel:
+
+{
+"repairable": true,
+"functional": false
+}
+
+Dadurch können neue Bedingungen ergänzt werden, ohne das Datenbankschema bei jeder Erweiterung ändern zu müssen.
+
+Entfernung
+
+Die Luftlinienentfernung zwischen Benutzerstandort und Standort wird im Backend mit der Haversine-Formel berechnet.
+
+Standortkoordinaten
+
+Für latitude und longitude werden numerische Werte verwendet.
+
+Indexierung
+
+Für die erste Implementierung werden normale Datenbankindizes auf den Standortkoordinaten vorgesehen. Eine räumliche Erweiterung mit PostGIS ist für den Kernumfang nicht erforderlich.
+
+Import externer Daten
+
+Externe Standortdaten werden nach folgendem Ablauf verarbeitet:
+
+Externe Datenquelle
+↓
+Import
+↓
+Validierung
+↓
+Normalisierung
+↓
+Speicherung in PostgreSQL
+
+Die Felder source, source_id und last_updated ermöglichen die Nachverfolgung und spätere Aktualisierung externer Datensätze.
+
+Aktualisierung externer Daten
+
+Externe Standortdaten werden regelmäßig automatisiert aktualisiert. Das konkrete Aktualisierungsintervall wird abhängig von der jeweiligen Datenquelle festgelegt.
+
+Erweiterbarkeit
+
+Das Datenmodell wird so umgesetzt, dass neue Kategorien, Gegenstände, Fragen, Antworten, Regeln, Empfehlungen und Standorttypen ohne grundlegende Änderung der Anwendung ergänzt werden können.
