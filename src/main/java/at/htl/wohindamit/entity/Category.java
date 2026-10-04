@@ -33,4 +33,8 @@ public class Category extends BaseEntity {
     @OneToMany(mappedBy = "category")
     @Builder.Default
     private List<Question> questions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "category")
+    @Builder.Default
+    private List<Rule> rules = new ArrayList<>();
 }

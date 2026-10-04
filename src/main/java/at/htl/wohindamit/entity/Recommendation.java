@@ -4,6 +4,9 @@ import at.htl.wohindamit.enums.Action;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "recommendations")
 @Getter
@@ -12,10 +15,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Recommendation extends BaseEntity {
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
-    private Action action;
 
     @Column(nullable = false)
     private String title;
@@ -28,4 +27,12 @@ public class Recommendation extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean active = true;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = true)
+    private Action action;
+
+    @OneToMany(mappedBy = "recommendation")
+    @Builder.Default
+    private List<Rule> rules = new ArrayList<>();
 }
