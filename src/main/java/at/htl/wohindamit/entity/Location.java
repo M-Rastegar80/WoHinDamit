@@ -9,7 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "locations")
+@Table(
+        name = "locations",
+        indexes = {
+                @Index(name = "idx_location_latitude", columnList = "latitude"),
+                @Index(name = "idx_location_longitude", columnList = "longitude")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
