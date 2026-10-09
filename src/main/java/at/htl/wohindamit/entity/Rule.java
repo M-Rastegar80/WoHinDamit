@@ -5,6 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.Map;
+
 @Entity
 @Table(name = "rules")
 @Getter
@@ -31,7 +33,7 @@ public class Rule extends BaseEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private String conditions;
+    private Map<String, Object> conditions;
 
     @Column(columnDefinition = "TEXT")
     private String reason;
