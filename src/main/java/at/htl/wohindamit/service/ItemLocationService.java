@@ -31,4 +31,9 @@ public class ItemLocationService {
     public void deleteById(Long id) {
         itemLocationRepository.deleteById(id);
     }
+
+    public List<ItemLocation> findSuitableLocationsForItem(Long itemId) {
+        return itemLocationRepository
+                .findAllByItem_IdAndSuitableTrueAndLocation_ActiveTrue(itemId);
+    }
 }
