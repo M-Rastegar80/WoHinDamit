@@ -1,0 +1,89 @@
+erDiagram
+    CATEGORY ||--o{ CATEGORY : parent_of
+    CATEGORY ||--o{ ITEM : groups
+    CATEGORY ||--o{ QUESTION : asks
+    QUESTION ||--o{ ANSWER_OPTION : offers
+    CATEGORY o|--o{ RULE : scopes
+    ITEM o|--o{ RULE : scopes
+    RECOMMENDATION ||--o{ RULE : selected_by
+    LOCATION_TYPE ||--o{ LOCATION : classifies
+    ITEM ||--o{ ITEM_LOCATION : linked_to
+    LOCATION ||--o{ ITEM_LOCATION : accepts_or_handles
+
+    CATEGORY {
+        bigint id PK
+        string name
+        string description
+        bigint parent_id FK
+        boolean active
+    }
+    ITEM {
+        bigint id PK
+        string name
+        bigint category_id FK
+        string description
+        boolean active
+    }
+    QUESTION {
+        bigint id PK
+        bigint category_id FK
+        string code
+        string question_text
+        string answer_type
+        int order_index
+        boolean required
+        boolean active
+    }
+    ANSWER_OPTION {
+        bigint id PK
+        bigint question_id FK
+        string value
+        string label
+        int order_index
+    }
+    RULE {
+        bigint id PK
+        bigint category_id FK
+        bigint item_id FK
+        json conditions
+        int priority
+        string reason
+        bigint recommendation_id FK
+        boolean active
+    }
+    RECOMMENDATION {
+        bigint id PK
+        string action
+        string title
+        string description
+        boolean active
+    }
+    LOCATION_TYPE {
+        bigint id PK
+        string code
+        string name
+        string description
+    }
+    LOCATION {
+        bigint id PK
+        bigint location_type_id FK
+        string external_id
+        string source
+        string name
+        string address
+        string postal_code
+        string district
+        decimal latitude
+        decimal longitude
+        string phone
+        string email
+        string website
+        string opening_hours
+        datetime last_imported_at
+        boolean active
+    }
+    ITEM_LOCATION {
+        bigint item_id PK, FK
+        bigint location_id PK, FK
+        string evidence_source
+    }

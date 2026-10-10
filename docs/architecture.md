@@ -1,340 +1,456 @@
-WoHinDamit? – System Architecture
-1. Ziel
+# WoHinDamit – Systemarchitektur
 
-Die Anwendung wird als Client-Server-Webanwendung umgesetzt.
+**Status:** Zielarchitektur für die Teamabstimmung
+**Projektphase:** Phase 1 – Analyse und Basisdesign
+**Stand:** Oktober 2026
 
-Die Architektur trennt die Benutzeroberfläche, die Geschäftslogik, die Datenbank und externe Datenquellen voneinander.
+## 1. Ziel
 
-Dadurch soll das System übersichtlich, wartbar und erweiterbar bleiben.
+WoHinDamit wird als Client-Server-Webanwendung umgesetzt. Die Anwendung unterstützt Benutzerinnen und Benutzer dabei, geeignete Entscheidungen für nicht mehr benötigte oder beschädigte Gegenstände zu treffen und passende Standorte zu finden.
 
-2. Gesamtarchitektur
-┌──────────────────────────────┐
-│          Benutzer*in         │
-└──────────────┬───────────────┘
-               │
-               │ HTTPS
-               ▼
-┌──────────────────────────────┐
-│          Frontend            │
-│   Suche / Fragen / Karte     │
-└──────────────┬───────────────┘
-               │
-               │ REST API
-               ▼
-┌──────────────────────────────┐
-│           Backend            │
-│                              │
-│  - API                       │
-│  - Business Logic            │
-│  - Decision Logic             │
-│  - Validation                │
-│  - Location Service           │
-│  - External Data Processing   │
-└───────┬──────────────┬───────┘
-        │              │
-        │              │
-        ▼              ▼
-┌───────────────┐  ┌─────────────────────┐
-│   Database    │  │ Externe Datenquellen│
-│               │  │                     │
-│ Categories    │  │ Stadt Wien          │
-│ Items         │  │ MA 48               │
-│ Questions     │  │ weitere offene Daten│
-│ Rules         │  │                     │
-│ Locations     │  └─────────────────────┘
-└───────────────┘
+Die Architektur trennt Benutzeroberfläche, API, Geschäftslogik, Datenzugriff und externe Datenquellen voneinander.
 
-3. Frontend
+Die wichtigsten Ziele sind:
 
-Das Frontend ist für die Benutzeroberfläche verantwortlich.
+- klare Trennung der Verantwortlichkeiten;
+- wartbarer und erweiterbarer Code;
+- datenbankgestützte Entscheidungsregeln;
+- dokumentierte Schnittstellen zwischen Frontend und Backend;
+- nachvollziehbare Herkunft und Aktualität externer Standortdaten;
+- zentrale Validierung und Fehlerbehandlung;
+- automatisierte Tests für die wesentlichen Funktionen.
 
-Aufgaben:
+Dieses Dokument beschreibt die Zielarchitektur. Es unterscheidet zwischen bereits vorhandenen Prototyp-Komponenten und noch geplanten Funktionen.
 
-Gegenstand suchen
+## 2. Gesamtarchitektur
 
-Kategorie auswählen
+```mermaid
+flowchart TD
+    USER[Benutzerin / Benutzer]
+    FE[Frontend]
+    API[REST API / Controller]
+    DTO[Request- und Response-DTOs]
+    SVC[Service-Schicht]
+    VALID[Validierung und Fehlerbehandlung]
+    DE[Decision Engine]
+    REPO[Repository-Schicht]
+    DB[(PostgreSQL)]
+    EXT[Externe Datenquellen]
+    IMP[Import und Normalisierung]
+    LOC[Location-Service]
+    REC[Recommendation]
 
-Zustandsfragen anzeigen
+    USER --> FE
+    FE --> API
+    API --> DTO
+    DTO --> VALID
+    VALID --> SVC
+    SVC --> DE
+    SVC --> LOC
+    DE --> REPO
+    REPO <--> DB
+    DE --> REC
+    REC --> SVC
+    LOC --> REPO
+    EXT --> IMP
+    IMP --> DB
+    SVC --> API
+    API --> FE
+    FE --> USER
+```
 
+Die Darstellung beschreibt den vorgesehenen logischen Aufbau. Sie bedeutet nicht, dass alle Komponenten bereits implementiert sind.
+
+## 3. Architekturkomponenten und Verantwortlichkeiten
+
+| Komponente | Verantwortung |
+|---|---|
+| Frontend | Kategorien und Gegenstände anzeigen, Fragen und Antwortoptionen darstellen, Antworten erfassen, Empfehlungen und Standorte präsentieren. |
+| REST API / Controller | HTTP-Anfragen entgegennehmen, Request- und Response-DTOs verwenden und geeignete Statuscodes zurückgeben. |
+| Validierung und Fehlerbehandlung | Ungültige Eingaben erkennen, Fehler einheitlich behandeln und verständliche Fehlermeldungen bereitstellen. |
+| Service-Schicht | Anwendungsfälle koordinieren und die Zusammenarbeit zwischen Repositorys, Entscheidungslogik und weiteren Services steuern. |
+| Decision Engine | Antworten validieren, aktive Regeln laden, Bedingungen auswerten und die passende Empfehlung bestimmen. |
+| Repository-Schicht | Datenbankabfragen und den Zugriff auf persistente Daten kapseln. |
+| PostgreSQL | Strukturierte Projektdaten wie Kategorien, Gegenstände, Fragen, Antwortoptionen, Regeln, Empfehlungen und Standorte speichern. |
+| Data Import | Externe Standortdaten laden, validieren, normalisieren und den Importstatus dokumentieren. |
+| Location-Service | Standortdaten für die API bereitstellen und später geeignete Standorte anhand vereinbarter Filter bestimmen. |
+| Externe Datenquellen | Offizielle Open-Data-Datensätze und überprüfte Anbieterinformationen bereitstellen. |
+
+## 4. Frontend
+
+Das Frontend ist für die Benutzeroberfläche und die Interaktion mit den Benutzerinnen und Benutzern verantwortlich.
+
+Die Aufgaben umfassen:
+
+- Gegenstände suchen und Kategorien auswählen;
+- Fragen und Antwortmöglichkeiten anzeigen;
+- Antworten erfassen und an das Backend senden;
+- Empfehlungen und deren Begründungen anzeigen;
+- passende Standorte auflisten und auf einer Karte darstellen;
+- verfügbare Adressen und Kontaktinformationen anzeigen;
+- verständliche Meldungen bei Fehlern oder fehlenden Daten darstellen.
+
+Die fachliche Entscheidungslogik liegt im Backend. Das Frontend soll keine eigenen, vom Backend abweichenden Entscheidungsregeln enthalten.
+
+## 5. REST API / Controller
+
+Die API bildet die Schnittstelle zwischen Frontend und Backend.
+
+Sie übernimmt folgende Aufgaben:
+
+- HTTP-Anfragen entgegennehmen;
+- Requests und Responses über DTOs definieren;
+- Eingaben an die Validierung und Service-Schicht übergeben;
+- HTTP-Statuscodes und JSON-Antworten zurückgeben;
+- Fehler kontrolliert behandeln.
+
+Controller sollen möglichst wenig Geschäftslogik enthalten. Komplexe Regeln und Anwendungsabläufe gehören in die Service-Schicht.
+
+Die aktuellen und geplanten API-Routen sind in `docs/api.md` dokumentiert.
+
+## 6. Service-Schicht
+
+Die Service-Schicht koordiniert die Anwendungsfälle.
+
+Zu den Aufgaben gehören:
+
+- Daten über Repositorys abrufen;
+- Kategorien, Fragen und Antwortoptionen für die API bereitstellen;
+- die Entscheidungslogik aufrufen;
+- Eingaben gemäß den fachlichen Anforderungen validieren;
+- später externe Standortdaten und Standortabfragen koordinieren.
+
+Die Services bilden die Verbindung zwischen Controllern, Repositorys und fachlichen Komponenten. Controller sollen nicht direkt auf die Datenbank zugreifen.
+
+## 7. Decision Engine
+
+Die Entscheidungslogik ist ein zentraler Bestandteil von WoHinDamit.
+
+Die Regeln sollen grundsätzlich in der Datenbank gepflegt werden. Fachliche Aktionen dürfen nicht für jede Kategorie als fest codierte Sonderfälle im Java-Code hinterlegt werden.
+
+Der vorgesehene Ablauf ist:
+
+```text
+Gegenstand und Kategorie auswählen
+              |
+              v
+Aktive Fragen und Antwortoptionen laden
+              |
+              v
 Antworten erfassen
+              |
+              v
+Antworten validieren
+              |
+              v
+Aktive Regeln aus der Datenbank laden
+              |
+              v
+Kategorie- und Gegenstandsbezug prüfen
+              |
+              v
+Regelbedingungen auswerten
+              |
+              v
+Passende Regel nach vereinbarter Priorität auswählen
+              |
+              v
+Recommendation und Begründung zurückgeben
+```
 
-Empfehlung anzeigen
+Die Bedingungen einer Regel werden anhand stabiler Fragecodes ausgewertet, beispielsweise `repairable` oder `functional`. Fragetexte sollen nicht als technische Schlüssel verwendet werden, da sie sich ändern oder übersetzt werden können.
 
-Begründung anzeigen
+Die Prioritätskonvention muss im Team eindeutig festgelegt werden. Der aktuelle Prototyp behandelt einen höheren numerischen Prioritätswert als höhere Priorität. Diese Konvention ist mit der fachlichen Spezifikation abzugleichen.
 
-passende Standorte anzeigen
+Falls keine Regel passt, muss die API einen dokumentierten und mit dem Frontend abgestimmten Rückgabefall liefern.
 
-Karte anzeigen
+## 8. Datenbank
 
-Kontaktinformationen anzeigen
+PostgreSQL ist die zentrale persistente Datenquelle.
 
-Das Frontend enthält möglichst wenig fachliche Entscheidungslogik.
+Die Datenbank soll mindestens folgende fachliche Bereiche unterstützen:
 
-Die eigentliche Entscheidungslogik wird im Backend ausgeführt.
+| Entity | Zweck |
+|---|---|
+| `Category` | Kategorien und gegebenenfalls hierarchische Beziehungen abbilden. |
+| `Item` | Gegenstände speichern und Kategorien zuordnen. |
+| `Question` | Fragen einer Kategorie oder eines Gegenstands beschreiben. |
+| `AnswerOption` | Zulässige Antwortoptionen einer Frage speichern. |
+| `Rule` | Bedingungen, Prioritäten und Begründungen von Entscheidungsregeln speichern. |
+| `Recommendation` | Mögliche Aktionen und zugehörige Empfehlungstexte definieren. |
+| `LocationType` | Standortarten wie Sammelstelle oder Reparaturwerkstatt definieren. |
+| `Location` | Standortinformationen und Quellenmetadaten speichern. |
 
-4. Backend
+Die endgültigen Tabellen, Attribute, Pflichtfelder, Fremdschlüssel und Kardinalitäten werden in `docs/database.md` und dem ER-Diagramm festgelegt.
 
-Das Backend stellt die zentrale Schnittstelle zwischen Frontend, Datenbank und externen Datenquellen dar.
+Die Datenbankstruktur soll Änderungen an Regeln und Empfehlungen ermöglichen, ohne bei jeder fachlichen Anpassung den Java-Code ändern zu müssen.
 
-Aufgaben:
+## 9. Externe Datenquellen und Datenimport
 
-API-Anfragen entgegennehmen
+Externe Datenquellen werden nicht direkt vom Frontend abgefragt. Der Zugriff erfolgt über das Backend beziehungsweise über einen kontrollierten Importprozess.
 
-Eingaben validieren
+Der vorgesehene Ablauf lautet:
 
-Daten aus der Datenbank laden
-
-Fragen und Antwortmöglichkeiten bereitstellen
-
-Entscheidungsregeln ausführen
-
-Empfehlungen erzeugen
-
-passende Standorte bestimmen
-
-externe Standortdaten verarbeiten
-
-Fehler behandeln
-
-Antworten an das Frontend zurückgeben
-
-5. Decision Logic
-
-Die Entscheidungslogik befindet sich im Backend.
-
-Der Ablauf:
-
+```text
+Externe Datenquelle
+        |
+        v
+Datenabruf / Import
+        |
+        v
+Validierung und Normalisierung
+        |
+        v
+Zuordnung zur internen Datenstruktur
+        |
+        v
+Speicherung in PostgreSQL
+        |
+        v
+Location-Service / REST API
+        |
+        v
 Frontend
-   |
-   | Item + Answers
-   ▼
-Backend
-   |
-   ▼
-Load Rules
-   |
-   ▼
-Evaluate Conditions
-   |
-   ▼
-Select Recommendation
-   |
-   ▼
-Recommendation + Reason
-   |
-   ▼
-Frontend
+```
 
+Mögliche Quellen sind:
 
-Die Regeln werden grundsätzlich aus der Datenbank geladen.
+- Open Data der Stadt Wien;
+- Daten zu MA-48-Einrichtungen und Mistplätzen;
+- Altstoffsammel- und Problemstoffsammelstellen;
+- geprüfte Informationen zu Reparaturwerkstätten und Repair-Cafés;
+- weitere geeignete Weitergabestellen und Gebrauchtwarenangebote.
 
-6. Database
+Für jede Quelle müssen Datenformat, Nutzungsbedingungen, Aktualisierungsrhythmus, verfügbare Felder und bekannte Datenlücken dokumentiert werden.
 
-Die Datenbank speichert die projektrelevanten strukturierten Daten.
+Externe Daten sollen nachvollziehbar einer Quelle zugeordnet werden können. Die Aktualisierungsstrategie darf vorhandene Daten nicht unbemerkt überschreiben.
 
-Dazu gehören insbesondere:
+Fehlende Informationen wie Telefonnummern, E-Mail-Adressen oder Öffnungszeiten werden nicht erfunden. Nicht verfügbare Werte werden gemäß dem festgelegten Datenmodell als fehlend gespeichert oder über die API entsprechend dargestellt.
 
-Kategorien
+## 10. Standortdaten und Location-Service
 
-Gegenstände
+Der Location-Service stellt Standortinformationen für das Frontend bereit.
 
-Fragen
+Ein Standort kann – abhängig von der Datenquelle – folgende Informationen enthalten:
 
-Antwortmöglichkeiten
+- Name;
+- Standorttyp;
+- Adresse und Postleitzahl;
+- geografische Koordinaten;
+- Bezirk;
+- Telefonnummer und E-Mail-Adresse;
+- Website und Öffnungszeiten;
+- Datenquelle und externe Referenz;
+- Zeitpunkt der letzten Aktualisierung.
 
-Regeln
+Geplante Funktionen sind:
 
-Empfehlungen
+- Standorte nach Typ filtern;
+- Standorte nach Kategorie oder Bezirk filtern;
+- Standorte innerhalb eines Suchradius bestimmen;
+- geeignete Standorte für eine Empfehlung anzeigen.
 
-Standorttypen
+Die endgültigen Filter, Sortierregeln und Anforderungen an die Standortsuche werden vor der Implementierung festgelegt.
 
-Standorte
+## 11. Layering und Paketstruktur im Java-Projekt
 
-Die Datenbank soll außerdem die Pflege und Erweiterung der Entscheidungsregeln ermöglichen.
+Die Java-Anwendung verwendet eine schichtorientierte Struktur.
 
-7. External Data Sources
+Empfohlene Paketverantwortungen:
 
-Externe Datenquellen werden nicht direkt vom Frontend abgefragt.
+| Package | Verantwortung |
+|---|---|
+| `controller` | REST-Endpunkte und HTTP-Verarbeitung |
+| `dto` | Öffentliche Request- und Response-Formate |
+| `service` | Anwendungsfälle, Validierung und Geschäftslogik |
+| `entity` | Persistente Datenmodelle |
+| `repository` | Datenbankabfragen |
+| `exception` | Zentrale Fehlerbehandlung |
+| später `importer` oder `integration` | Externe Datenquellen und Importprozesse |
 
-Stattdessen übernimmt das Backend den Zugriff.
+Die Trennung sorgt dafür, dass Änderungen an der API, der Entscheidungslogik oder den Datenquellen möglichst wenig Auswirkungen auf andere Schichten haben.
 
-External Source
-      |
-      ▼
-Backend Data Import
-      |
-      ▼
-Validation / Normalization
-      |
-      ▼
-Database
-      |
-      ▼
-Frontend
+## 12. Sicherheit
 
+Die Architektur berücksichtigt grundlegende Sicherheitsmaßnahmen:
 
-Dadurch kann das System externe Daten zwischenspeichern und unabhängig von der Verfügbarkeit der externen Quelle verwenden.
+- Eingaben serverseitig validieren;
+- keine direkte Datenbankverbindung vom Frontend zulassen;
+- sensible Zugangsdaten nicht im Repository speichern;
+- Datenbankzugänge über geeignete Konfiguration bereitstellen;
+- interne technische Informationen nicht an Benutzerinnen und Benutzer weitergeben;
+- Import- und Verwaltungsfunktionen nicht ungeschützt öffentlich anbieten;
+- zulässige Request-Größen und Eingabeformate begrenzen.
 
-8. Standortdaten
+Authentifizierung, Autorisierung und administrative Zugriffe müssen entsprechend den tatsächlichen Projektanforderungen festgelegt werden.
 
-Standortdaten können aus unterschiedlichen Quellen stammen.
+## 13. Fehlerbehandlung und Verfügbarkeit
 
-Geplant sind insbesondere:
+Fehler werden möglichst innerhalb der zuständigen Schicht erkannt und kontrolliert weitergegeben.
 
-offene Daten der Stadt Wien
+| Bereich | Verhalten |
+|---|---|
+| Frontend | Verständliche Meldungen anzeigen und fehlende Informationen kenntlich machen. |
+| Controller / API | Geeignete HTTP-Statuscodes und dokumentierte Fehlerantworten liefern. |
+| Service / Decision Engine | Ungültige Eingaben und fachliche Sonderfälle kontrolliert behandeln. |
+| Datenbank | Datenbankfehler erkennen und Anfragen kontrolliert beenden. |
+| Externe Datenquelle | Fehler protokollieren und – sofern fachlich vertretbar – vorhandene gespeicherte Daten weiterverwenden. |
+| Datenimport | Importstatus und Fehler nachvollziehbar dokumentieren. |
 
-MA-48-Daten
+Fehlermeldungen dürfen keine Stacktraces, Zugangsdaten oder sonstigen internen technischen Details offenlegen.
 
-weitere offene Standortdaten
+Das konkrete Fehlerformat wird in `docs/errors.md` und `docs/api.md` festgelegt.
 
-geprüfte zusätzliche Einträge, falls erforderlich
+## 14. Tests und Qualitätssicherung
 
-Die Daten werden nach Möglichkeit vereinheitlicht.
+Die Architektur soll automatisierte Tests auf mehreren Ebenen unterstützen.
 
-Ein Standort soll unter anderem folgende Informationen besitzen können:
+**Unit-Tests:**
 
-Name
+- Validierung der Antworten;
+- Auswertung der Regelbedingungen;
+- Prioritätsauswahl;
+- Erzeugung der Empfehlung;
+- Verhalten bei ungültigen oder fehlenden Eingaben.
 
-Adresse
+**Controller-Tests:**
 
-Standorttyp
+- HTTP-Statuscodes;
+- Response-Formate;
+- Eingabevalidierung;
+- Fehlerbehandlung;
+- Verhalten bei fehlenden Ressourcen.
 
-Koordinaten
+**Integrationstests:**
 
-Kontaktinformationen
+- Verbindung zur Datenbank;
+- Repository-Abfragen;
+- Zusammenspiel von Service, Repository und Datenbank;
+- Verhalten des Gesamtsystems mit realistischen Testdaten.
 
-Quelle
+Externe Datenimporte benötigen eigene Tests für Normalisierung, fehlerhafte Datensätze und fehlende Felder.
 
-Aktualisierungszeitpunkt
+## 15. Verantwortlichkeiten im Team
 
-9. API-Kommunikation
+### Backend – Noushin Azimi
 
-Frontend und Backend kommunizieren über dokumentierte HTTP-Schnittstellen.
+Verantwortlich für:
 
-Beispiel:
+- Backend und Datenbank;
+- Entscheidungslogik;
+- dokumentierte Backend-Schnittstellen;
+- externe Datenquellen und Datenimport;
+- Validierung und Fehlerbehandlung;
+- Backend-Tests;
+- technische Dokumentation.
 
-GET /api/categories
-GET /api/items
-GET /api/items/{id}/questions
-POST /api/recommendations
-GET /api/locations
+### Frontend – Mohamad Rastegar Moghadam
 
+Verantwortlich für:
 
-Die endgültigen Endpunkte werden im API-Design genauer definiert.
+- Benutzeroberfläche;
+- Such- und Entscheidungsablauf im Frontend;
+- Kartenansicht und Darstellung von Standorten;
+- Anzeige von Empfehlungen und Kontaktinformationen;
+- Frontend-Backend-Integration;
+- Deployment sowie Server- und Netzwerkdokumentation gemäß der Teamvereinbarung.
 
-10. Sicherheitsgrundlagen
+Beide Teammitglieder stimmen API-Verträge, Integration, Tests und Projektdokumentation gemeinsam ab.
 
-Das System soll grundlegende Sicherheitsmaßnahmen berücksichtigen.
+## 16. Erweiterbarkeit
 
-Dazu gehören:
+Die Architektur soll spätere optionale Funktionen ermöglichen, ohne den Kern des Systems grundlegend neu zu gestalten.
 
-Validierung von Benutzereingaben
+Mögliche Erweiterungen sind:
 
-sichere Verarbeitung von API-Anfragen
+- Beiträge und Weitergabe-Angebote;
+- Foto-Upload und Bilderkennung;
+- Favoriten;
+- Routenplanung;
+- Prüfung von Öffnungszeiten;
+- Verwaltungsfunktionen;
+- zusätzliche Wissens- und Informationsangebote.
 
-Schutz vor ungültigen Daten
+Diese Funktionen werden erst eingeplant, wenn sie durch den Projektumfang bestätigt sind.
 
-keine direkte Datenbankverbindung vom Frontend
+## 17. Aktueller Prototyp und Zielzustand
 
-sichere Serverkonfiguration
+Der aktuelle Prototyp enthält bereits:
 
-Zugriffsschutz für administrative bzw. interne Funktionen
+- Spring Boot und PostgreSQL;
+- JPA-Entities und Repositorys;
+- Service-Klassen;
+- eine erste datenbankgestützte Entscheidungslogik;
+- DTOs für Anfragen und Antworten;
+- Endpunkte für Kategorien, Fragen und Antwortoptionen;
+- einen Endpunkt zur Entscheidungsauswertung;
+- eine zentrale Behandlung bestimmter Eingabefehler;
+- automatisierte Tests für wesentliche Service- und Controller-Funktionen.
 
-11. Fehlerbehandlung
+Die Standort-API und die externe Importpipeline sind noch als geplante Implementierungsarbeit zu behandeln.
 
-Fehler sollen innerhalb der jeweiligen Schicht behandelt werden.
+Die vorhandenen Komponenten werden im Rahmen eines Code-Reviews mit der endgültigen fachlichen Architektur, dem Datenmodell und dem API-Vertrag abgeglichen.
 
-Beispiele:
+Ein erfolgreicher Testlauf des Prototyps bestätigt noch nicht, dass alle fachlichen Anforderungen, Datenquellen oder Integrationsanforderungen erfüllt sind.
 
-Frontend
-→ Benutzerfreundliche Fehlermeldung
+## 18. Architekturprinzip
 
-Backend
-→ Validierung und strukturierte Fehlermeldung
+Die grundlegende Verantwortungsverteilung lautet:
 
-External Data Source
-→ Fehler protokollieren und vorhandene Daten verwenden
-
-Database
-→ Fehler erkennen und API-Anfrage kontrolliert beantworten
-
-
-Das System soll keine internen technischen Details an Benutzer*innen weitergeben.
-
-12. Verantwortlichkeiten
-Frontend – Mohamad Rastegar Moghadam
-
-Benutzeroberfläche
-
-Such- und Entscheidungsablauf
-
-Kartenansicht
-
-Kontaktinformationen
-
-Frontend-Backend-Integration
-
-Deployment
-
-Server- und Netzwerkdokumentation
-
-Backend – Noushin Azimi
-
-Backend
-
-Datenbank
-
-Entscheidungslogik
-
-externe Daten
-
-dokumentierte Schnittstellen
-
-Datenimport
-
-Fehlerbehandlung
-
-Backend-Tests
-
-technische Dokumentation
-
-Beide Teammitglieder wirken bei Integration, Tests und Projektdokumentation mit.
-
-13. Grundprinzip
-
-Die Architektur folgt dem Prinzip:
-
+```text
 Presentation
-     ↓
-API
-     ↓
-Business Logic
-     ↓
-Data Access
-     ↓
-Database / External Data
+     |
+     v
+REST API / Controller
+     |
+     v
+Service-Schicht
+     |
+     v
+Business Logic / Decision Engine
+     |
+     v
+Repository-Schicht
+     |
+     v
+PostgreSQL
+```
 
+Für externe Standortdaten gilt ergänzend:
 
-Die einzelnen Komponenten sollen möglichst klar voneinander getrennt sein.
+```text
+Externe Datenquelle
+        |
+        v
+Import und Normalisierung
+        |
+        v
+PostgreSQL
+        |
+        v
+Location-Service
+        |
+        v
+REST API
+        |
+        v
+Frontend
+```
 
-14. Erweiterbarkeit
+Die Architektur folgt dem Prinzip einer klaren Trennung der Verantwortlichkeiten. Entscheidungen, persistente Daten und externe Datenimporte sollen nachvollziehbar, testbar und unabhängig voneinander weiterentwickelt werden können.
 
-Die Architektur soll spätere optionale Funktionen ermöglichen, ohne den Kern des Systems grundlegend zu verändern.
+## 19. Offene Architekturentscheidungen
 
-Mögliche Erweiterungen:
+Vor dem Übergang zur umfangreicheren Backend-Implementierung sind insbesondere folgende Punkte zu klären:
 
-Posting-Funktion
+1. Endgültige ER-Struktur und Beziehungen der Datenbank-Entities.
+2. Fachliche Konvention für Rule-Prioritäten und das Verhalten bei keiner passenden Regel.
+3. Verbindlicher API-Vertrag mit dem Frontend-Team.
+4. Verantwortlichkeit und Aktualisierungsstrategie für externe Standortdaten.
+5. Erforderliche Sicherheitsmaßnahmen für administrative und interne Funktionen.
+6. Anforderungen an Standortsuche, Umkreisfilter und Kartenintegration.
+7. Umgang mit fehlenden, veralteten oder widersprüchlichen externen Daten.
 
-Foto-Upload
+Diese Entscheidungen werden in den zugehörigen Dokumenten festgehalten und gemeinsam abgestimmt.
 
-Bilderkennung
-
-Favoriten
-
-Routing
-
-Öffnungszeitenprüfung
-
-Administration
-
-Wertstoff-Wissen
+**Fazit:** Die Architektur definiert die vorgesehene technische Struktur von WoHinDamit. Der bestehende Prototyp bildet eine erste technische Grundlage; die vollständige Umsetzung erfolgt schrittweise auf Basis der abgestimmten Requirements, des Datenmodells und des API-Designs.
