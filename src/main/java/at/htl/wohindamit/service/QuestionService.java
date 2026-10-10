@@ -31,4 +31,11 @@ public class QuestionService {
     public void deleteById(Long id) {
         questionRepository.deleteById(id);
     }
+
+    public List<Question> findActiveByCategoryId(Long categoryId) {
+        return questionRepository
+                .findAllByCategory_IdAndActiveTrueOrderByOrderIndexAsc(
+                        categoryId
+                );
+    }
 }
