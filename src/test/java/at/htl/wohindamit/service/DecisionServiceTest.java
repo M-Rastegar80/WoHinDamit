@@ -82,6 +82,18 @@ class DecisionServiceTest {
     }
 
     @Test
+    void shouldRejectInvalidBooleanAnswer() {
+        DecisionRequest request = createRequest(
+                Map.of("repairable", "maybe")
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> decisionService.evaluate(request)
+        );
+    }
+
+    @Test
     void shouldAcceptStringBooleanAnswer() {
         Recommendation recommendation = createRecommendation(
                 10L, Action.REPAIR, "Repair"
