@@ -1,3 +1,4 @@
+
 package at.htl.wohindamit.service;
 
 import at.htl.wohindamit.entity.AnswerOption;
@@ -23,6 +24,11 @@ public class AnswerOptionService {
 
     public Optional<AnswerOption> findById(Long id) {
         return answerOptionRepository.findById(id);
+    }
+
+    public List<AnswerOption> findByQuestionId(Long questionId) {
+        return answerOptionRepository
+                .findAllByQuestion_IdOrderByOrderIndexAsc(questionId);
     }
 
     public AnswerOption save(AnswerOption answerOption) {
