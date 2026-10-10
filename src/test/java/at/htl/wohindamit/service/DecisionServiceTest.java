@@ -151,6 +151,63 @@ class DecisionServiceTest {
         return recommendation;
     }
 
+
+    @Test
+    void shouldIgnoreRuleForDifferentCategory() {
+        Recommendation recommendation = createRecommendation(
+                10L, Action.REPAIR, "Repair"
+        );
+
+        Rule rule = createRule(
+                1, Map.of("repairable", true), recommendation
+        );
+
+        Category differentCategory = new Category();
+        differentCategory.setId(2L);
+        rule.setCategory(differentCategory);
+
+        when(ruleRepository.findAllByActiveTrue())
+                .thenReturn(List.of(rule));
+
+        DecisionRequest request = createRequest(
+                Map.of("repairable", true)
+        );
+
+        Optional<DecisionResponse> result =
+                decisionService.evaluate(request);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldIgnoreRuleForDifferentItem() {
+        Recommendation recommendation = createRecommendation(
+                10L, Action.REPAIR, "Repair"
+        );
+
+        Rule rule = createRule(
+                1, Map.of("repairable", true), recommendation
+        );
+
+        at.htl.wohindamit.entity.Item specificItem =
+                new at.htl.wohindamit.entity.Item();
+        specificItem.setId(7L);
+        rule.setItem(specificItem);
+
+        when(ruleRepository.findAllByActiveTrue())
+                .thenReturn(List.of(rule));
+
+        DecisionRequest request = createRequest(
+                Map.of("repairable", true)
+        );
+        request.setItemId(5L);
+
+        Optional<DecisionResponse> result =
+                decisionService.evaluate(request);
+
+        assertTrue(result.isEmpty());
+    }
+
     private Rule createRule(
             int priority,
             Map<String, Object> conditions,
