@@ -1,3 +1,4 @@
+
 package at.htl.wohindamit.service;
 
 import at.htl.wohindamit.entity.Location;
@@ -16,19 +17,13 @@ public class LocationService {
         this.locationRepository = locationRepository;
     }
 
-    public List<Location> findAll() {
-        return locationRepository.findAll();
+    public List<Location> findAllActive() {
+        return locationRepository.findAllByActiveTrue();
     }
 
     public Optional<Location> findById(Long id) {
-        return locationRepository.findById(id);
-    }
-
-    public Location save(Location location) {
-        return locationRepository.save(location);
-    }
-
-    public void deleteById(Long id) {
-        locationRepository.deleteById(id);
+        return locationRepository.findById(id)
+                .filter(location ->
+                        Boolean.TRUE.equals(location.getActive()));
     }
 }
