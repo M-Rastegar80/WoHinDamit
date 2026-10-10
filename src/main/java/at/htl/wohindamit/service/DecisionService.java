@@ -1,15 +1,20 @@
+
 package at.htl.wohindamit.service;
 
 import at.htl.wohindamit.dto.DecisionRequest;
 import at.htl.wohindamit.dto.DecisionResponse;
+import at.htl.wohindamit.entity.AnswerOption;
 import at.htl.wohindamit.entity.Question;
 import at.htl.wohindamit.entity.Recommendation;
 import at.htl.wohindamit.entity.Rule;
+import at.htl.wohindamit.repository.AnswerOptionRepository;
 import at.htl.wohindamit.repository.QuestionRepository;
 import at.htl.wohindamit.repository.RuleRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -24,12 +29,15 @@ public class DecisionService {
 
     private final RuleRepository ruleRepository;
     private final QuestionRepository questionRepository;
+    private final AnswerOptionRepository answerOptionRepository;
 
     public DecisionService(
             RuleRepository ruleRepository,
-            QuestionRepository questionRepository) {
+            QuestionRepository questionRepository,
+            AnswerOptionRepository answerOptionRepository) {
         this.ruleRepository = ruleRepository;
         this.questionRepository = questionRepository;
+        this.answerOptionRepository = answerOptionRepository;
     }
 
     public Optional<DecisionResponse> evaluate(DecisionRequest request) {
@@ -154,8 +162,6 @@ public class DecisionService {
 
             case "TEXT":
             case "STRING":
-            case "SINGLE_CHOICE":
-            case "SELECT":
                 if (answer instanceof String) {
                     return answer;
                 }
@@ -165,15 +171,26 @@ public class DecisionService {
                                 + "' must be a string."
                 );
 
-            case "MULTIPLE_CHOICE":
-            case "MULTI_SELECT":
-                if (answer instanceof Collection<?> collection) {
-                    return List.copyOf(collection);
+            case "SINGLE_CHOICE":
+            case "SELECT":
+                if (answer instanceof String value) {
+                    return normalizeSingleChoice(question, value);
                 }
 
                 throw new IllegalArgumentException(
                         "Answer for question '" + question.getCode()
-                                + "' must be a list."
+                                + "' must be a single option value."
+                );
+
+            case "MULTIPLE_CHOICE":
+            case "MULTI_SELECT":
+                if (answer instanceof Collection<?> values) {
+                    return normalizeMultipleChoice(question, values);
+                }
+
+                throw new IllegalArgumentException(
+                        "Answer for question '" + question.getCode()
+                                + "' must be a list of option values."
                 );
 
             default:
@@ -182,6 +199,62 @@ public class DecisionService {
                                 + question.getCode() + "': " + answerType
                 );
         }
+    }
+
+    private String normalizeSingleChoice(
+            Question question,
+            String selectedValue) {
+
+        List<String> allowedValues = findAllowedOptionValues(question);
+
+        if (!allowedValues.contains(selectedValue)) {
+            throw new IllegalArgumentException(
+                    "Invalid option '" + selectedValue
+                            + "' for question: " + question.getCode()
+            );
+        }
+
+        return selectedValue;
+    }
+
+    private List<String> normalizeMultipleChoice(
+            Question question,
+            Collection<?> selectedValues) {
+
+        List<String> allowedValues = findAllowedOptionValues(question);
+        List<String> normalizedValues = new ArrayList<>();
+
+        for (Object selectedValue : selectedValues) {
+            if (!(selectedValue instanceof String value)
+                    || !allowedValues.contains(value)) {
+                throw new IllegalArgumentException(
+                        "Invalid option for question: "
+                                + question.getCode()
+                );
+            }
+
+            normalizedValues.add(value);
+        }
+
+        if (normalizedValues.isEmpty()
+                && Boolean.TRUE.equals(question.getRequired())) {
+            throw new IllegalArgumentException(
+                    "At least one option is required for question: "
+                            + question.getCode()
+            );
+        }
+
+        return List.copyOf(normalizedValues);
+    }
+
+    private List<String> findAllowedOptionValues(Question question) {
+        return answerOptionRepository
+                .findAllByQuestion_IdOrderByOrderIndexAsc(
+                        question.getId()
+                )
+                .stream()
+                .map(AnswerOption::getValue)
+                .toList();
     }
 
     private BigDecimal normalizeNumber(

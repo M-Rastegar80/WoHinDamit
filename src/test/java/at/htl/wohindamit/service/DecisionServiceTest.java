@@ -3,12 +3,14 @@ package at.htl.wohindamit.service;
 
 import at.htl.wohindamit.dto.DecisionRequest;
 import at.htl.wohindamit.dto.DecisionResponse;
+import at.htl.wohindamit.entity.AnswerOption;
 import at.htl.wohindamit.entity.Category;
 import at.htl.wohindamit.entity.Item;
 import at.htl.wohindamit.entity.Question;
 import at.htl.wohindamit.entity.Recommendation;
 import at.htl.wohindamit.entity.Rule;
 import at.htl.wohindamit.enums.Action;
+import at.htl.wohindamit.repository.AnswerOptionRepository;
 import at.htl.wohindamit.repository.QuestionRepository;
 import at.htl.wohindamit.repository.RuleRepository;
 
@@ -27,6 +29,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +40,9 @@ class DecisionServiceTest {
 
     @Mock
     private QuestionRepository questionRepository;
+
+    @Mock
+    private AnswerOptionRepository answerOptionRepository;
 
     @InjectMocks
     private DecisionService decisionService;
@@ -54,8 +60,8 @@ class DecisionServiceTest {
         question.setRequired(true);
         question.setActive(true);
 
-        when(questionRepository
-                .findAllByCategory_IdAndActiveTrueOrderByOrderIndexAsc(1L))
+        lenient().when(questionRepository
+                        .findAllByCategory_IdAndActiveTrueOrderByOrderIndexAsc(1L))
                 .thenReturn(List.of(question));
     }
 
@@ -278,6 +284,44 @@ class DecisionServiceTest {
                 decisionService.evaluate(request);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldRejectChoiceNotInConfiguredOptions() {
+        Question choiceQuestion = new Question();
+        choiceQuestion.setId(2L);
+        choiceQuestion.setCode("disposalMethod");
+        choiceQuestion.setQuestionText(
+                "What should happen to the item?"
+        );
+        choiceQuestion.setAnswerType("SINGLE_CHOICE");
+        choiceQuestion.setOrderIndex(1);
+        choiceQuestion.setRequired(true);
+        choiceQuestion.setActive(true);
+
+        when(questionRepository
+                .findAllByCategory_IdAndActiveTrueOrderByOrderIndexAsc(1L))
+                .thenReturn(List.of(choiceQuestion));
+
+        AnswerOption option = new AnswerOption();
+        option.setId(1L);
+        option.setQuestion(choiceQuestion);
+        option.setValue("donate");
+        option.setLabel("Donate");
+        option.setOrderIndex(1);
+
+        when(answerOptionRepository
+                .findAllByQuestion_IdOrderByOrderIndexAsc(2L))
+                .thenReturn(List.of(option));
+
+        DecisionRequest request = createRequest(
+                Map.of("disposalMethod", "repair")
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> decisionService.evaluate(request)
+        );
     }
 
     private DecisionRequest createRequest(
