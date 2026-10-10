@@ -324,6 +324,33 @@ class DecisionServiceTest {
         );
     }
 
+    @Test
+    void shouldNotReturnInactiveRecommendation() {
+        Recommendation recommendation = createRecommendation(
+                10L, Action.REPAIR, "Repair"
+        );
+
+        recommendation.setActive(false);
+
+        Rule rule = createRule(
+                1,
+                Map.of("repairable", true),
+                recommendation
+        );
+
+        when(ruleRepository.findAllByActiveTrue())
+                .thenReturn(List.of(rule));
+
+        DecisionRequest request = createRequest(
+                Map.of("repairable", true)
+        );
+
+        Optional<DecisionResponse> result =
+                decisionService.evaluate(request);
+
+        assertTrue(result.isEmpty());
+    }
+
     private DecisionRequest createRequest(
             Map<String, Object> answers
     ) {

@@ -59,6 +59,10 @@ public class DecisionService {
 
         List<Rule> matchingRules = ruleRepository.findAllByActiveTrue()
                 .stream()
+                .filter(rule -> rule.getRecommendation() != null)
+                .filter(rule -> Boolean.TRUE.equals(
+                        rule.getRecommendation().getActive()
+                ))
                 .filter(rule -> matchesScope(rule, request))
                 .filter(rule -> matchesConditions(
                         rule.getConditions(), answers
