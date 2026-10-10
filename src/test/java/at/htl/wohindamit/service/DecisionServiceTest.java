@@ -4,12 +4,18 @@ package at.htl.wohindamit.service;
 import at.htl.wohindamit.dto.DecisionRequest;
 import at.htl.wohindamit.dto.DecisionResponse;
 import at.htl.wohindamit.entity.Category;
+import at.htl.wohindamit.entity.Item;
+import at.htl.wohindamit.entity.Question;
 import at.htl.wohindamit.entity.Recommendation;
 import at.htl.wohindamit.entity.Rule;
 import at.htl.wohindamit.enums.Action;
+import at.htl.wohindamit.repository.QuestionRepository;
 import at.htl.wohindamit.repository.RuleRepository;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -28,8 +35,80 @@ class DecisionServiceTest {
     @Mock
     private RuleRepository ruleRepository;
 
+    @Mock
+    private QuestionRepository questionRepository;
+
     @InjectMocks
     private DecisionService decisionService;
+
+    @BeforeEach
+    void setUpQuestions() {
+        Question question = new Question();
+        question.setId(1L);
+        question.setCode("repairable");
+        question.setQuestionText(
+                "Ist der Gegenstand reparierbar?"
+        );
+        question.setAnswerType("BOOLEAN");
+        question.setOrderIndex(1);
+        question.setRequired(true);
+        question.setActive(true);
+
+        when(questionRepository
+                .findAllByCategory_IdAndActiveTrueOrderByOrderIndexAsc(1L))
+                .thenReturn(List.of(question));
+    }
+
+    @Test
+    void shouldRejectRequestWhenRequiredAnswerIsMissing() {
+        DecisionRequest request = createRequest(Map.of());
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> decisionService.evaluate(request)
+        );
+    }
+
+    @Test
+    void shouldRejectUnknownAnswerCode() {
+        DecisionRequest request = createRequest(
+                Map.of("unknownQuestion", true)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> decisionService.evaluate(request)
+        );
+    }
+
+    @Test
+    void shouldAcceptStringBooleanAnswer() {
+        Recommendation recommendation = createRecommendation(
+                10L, Action.REPAIR, "Repair"
+        );
+
+        Rule rule = createRule(
+                1,
+                Map.of("repairable", true),
+                recommendation
+        );
+
+        when(ruleRepository.findAllByActiveTrue())
+                .thenReturn(List.of(rule));
+
+        DecisionRequest request = createRequest(
+                Map.of("repairable", "true")
+        );
+
+        Optional<DecisionResponse> result =
+                decisionService.evaluate(request);
+
+        assertTrue(result.isPresent());
+        assertEquals(
+                Long.valueOf(10L),
+                result.get().getRecommendationId()
+        );
+    }
 
     @Test
     void shouldReturnRecommendationWhenRuleMatches() {
@@ -38,7 +117,9 @@ class DecisionServiceTest {
         );
 
         Rule rule = createRule(
-                1, Map.of("repairable", true), recommendation
+                1,
+                Map.of("repairable", true),
+                recommendation
         );
 
         when(ruleRepository.findAllByActiveTrue())
@@ -67,7 +148,9 @@ class DecisionServiceTest {
         );
 
         Rule rule = createRule(
-                1, Map.of("repairable", true), recommendation
+                1,
+                Map.of("repairable", true),
+                recommendation
         );
 
         when(ruleRepository.findAllByActiveTrue())
@@ -126,32 +209,6 @@ class DecisionServiceTest {
         assertEquals("RECYCLE", result.get().getAction());
     }
 
-    private DecisionRequest createRequest(
-            Map<String, Object> answers
-    ) {
-        DecisionRequest request = new DecisionRequest();
-        request.setCategoryId(1L);
-        request.setAnswers(answers);
-        return request;
-    }
-
-    private Recommendation createRecommendation(
-            Long id,
-            Action action,
-            String title
-    ) {
-        Recommendation recommendation = new Recommendation();
-        recommendation.setId(id);
-        recommendation.setAction(action);
-        recommendation.setTitle(title);
-        recommendation.setDescription("Test description");
-        recommendation.setPriority(1);
-        recommendation.setActive(true);
-
-        return recommendation;
-    }
-
-
     @Test
     void shouldIgnoreRuleForDifferentCategory() {
         Recommendation recommendation = createRecommendation(
@@ -159,7 +216,9 @@ class DecisionServiceTest {
         );
 
         Rule rule = createRule(
-                1, Map.of("repairable", true), recommendation
+                1,
+                Map.of("repairable", true),
+                recommendation
         );
 
         Category differentCategory = new Category();
@@ -186,11 +245,12 @@ class DecisionServiceTest {
         );
 
         Rule rule = createRule(
-                1, Map.of("repairable", true), recommendation
+                1,
+                Map.of("repairable", true),
+                recommendation
         );
 
-        at.htl.wohindamit.entity.Item specificItem =
-                new at.htl.wohindamit.entity.Item();
+        Item specificItem = new Item();
         specificItem.setId(7L);
         rule.setItem(specificItem);
 
@@ -206,6 +266,31 @@ class DecisionServiceTest {
                 decisionService.evaluate(request);
 
         assertTrue(result.isEmpty());
+    }
+
+    private DecisionRequest createRequest(
+            Map<String, Object> answers
+    ) {
+        DecisionRequest request = new DecisionRequest();
+        request.setCategoryId(1L);
+        request.setAnswers(answers);
+        return request;
+    }
+
+    private Recommendation createRecommendation(
+            Long id,
+            Action action,
+            String title
+    ) {
+        Recommendation recommendation = new Recommendation();
+        recommendation.setId(id);
+        recommendation.setAction(action);
+        recommendation.setTitle(title);
+        recommendation.setDescription("Test description");
+        recommendation.setPriority(1);
+        recommendation.setActive(true);
+
+        return recommendation;
     }
 
     private Rule createRule(
