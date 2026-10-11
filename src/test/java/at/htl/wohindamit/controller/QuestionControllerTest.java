@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,8 +62,14 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].code").value("repairable"))
+                .andExpect(jsonPath("$[0].questionText")
+                        .value("Ist der Gegenstand reparierbar?"))
                 .andExpect(jsonPath("$[0].answerType").value("BOOLEAN"))
+                .andExpect(jsonPath("$[0].orderIndex").value(1))
                 .andExpect(jsonPath("$[0].required").value(true));
+
+        verify(questionService).findActiveByCategoryId(2L);
+        verifyNoMoreInteractions(questionService);
     }
 
     @Test
@@ -74,5 +82,8 @@ class QuestionControllerTest {
         mockMvc.perform(get("/api/categories/2/questions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+
+        verify(questionService).findActiveByCategoryId(2L);
+        verifyNoMoreInteractions(questionService);
     }
 }
