@@ -1,4 +1,3 @@
-
 package at.htl.wohindamit.controller;
 
 import at.htl.wohindamit.entity.Category;
@@ -13,6 +12,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -59,10 +60,13 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(2))
-                .andExpect(
-                        jsonPath("$[0].name")
-                                .value("API Test Category")
-                );
+                .andExpect(jsonPath("$[0].name")
+                        .value("API Test Category"))
+                .andExpect(jsonPath("$[0].description")
+                        .value("Active test category"));
+
+        verify(categoryService).findAll();
+        verifyNoMoreInteractions(categoryService);
     }
 
     @Test
@@ -75,5 +79,8 @@ class CategoryControllerTest {
         mockMvc.perform(get("/api/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+
+        verify(categoryService).findAll();
+        verifyNoMoreInteractions(categoryService);
     }
 }
