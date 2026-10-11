@@ -1,6 +1,5 @@
 package at.htl.wohindamit.controller;
 
-import at.htl.wohindamit.dto.LocationResponse;
 import at.htl.wohindamit.entity.Item;
 import at.htl.wohindamit.entity.ItemLocation;
 import at.htl.wohindamit.entity.Location;
@@ -17,9 +16,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class ItemLocationControllerTest {
 
@@ -74,6 +76,9 @@ class ItemLocationControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(10))
                 .andExpect(jsonPath("$[0].name").value("Wiener Mistplatz"));
+
+        verify(itemService).findById(2L);
+        verify(itemLocationService).findSuitableLocationsForItem(2L);
     }
 
     @Test
@@ -91,6 +96,8 @@ class ItemLocationControllerTest {
         mockMvc.perform(get("/api/items/2/locations"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+
+        verify(itemLocationService).findSuitableLocationsForItem(2L);
     }
 
     @Test
@@ -99,6 +106,8 @@ class ItemLocationControllerTest {
 
         mockMvc.perform(get("/api/items/999/locations"))
                 .andExpect(status().isNotFound());
+
+        verifyNoInteractions(itemLocationService);
     }
 
     @Test
@@ -111,5 +120,7 @@ class ItemLocationControllerTest {
 
         mockMvc.perform(get("/api/items/2/locations"))
                 .andExpect(status().isNotFound());
+
+        verifyNoInteractions(itemLocationService);
     }
 }
