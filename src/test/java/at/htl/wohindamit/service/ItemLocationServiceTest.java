@@ -53,6 +53,7 @@ class ItemLocationServiceTest {
         verify(itemLocationRepository).findAll();
     }
 
+
     @Test
     void shouldFindExistingItemLocationById() {
         ItemLocation itemLocation = new ItemLocation();
@@ -65,8 +66,11 @@ class ItemLocationServiceTest {
 
         assertTrue(result.isPresent());
         assertSame(itemLocation, result.get());
+
         verify(itemLocationRepository).findById(1L);
+        verifyNoMoreInteractions(itemLocationRepository);
     }
+
 
     @Test
     void shouldReturnEmptyWhenItemLocationIdDoesNotExist() {
@@ -77,8 +81,11 @@ class ItemLocationServiceTest {
                 itemLocationService.findById(99L);
 
         assertTrue(result.isEmpty());
+
         verify(itemLocationRepository).findById(99L);
+        verifyNoMoreInteractions(itemLocationRepository);
     }
+
 
     @Test
     void shouldSaveItemLocation() {
@@ -95,6 +102,7 @@ class ItemLocationServiceTest {
         verify(itemLocationRepository).save(itemLocation);
     }
 
+
     @Test
     void shouldDeleteItemLocationById() {
         itemLocationService.deleteById(1L);
@@ -102,6 +110,7 @@ class ItemLocationServiceTest {
         verify(itemLocationRepository).deleteById(1L);
         verifyNoMoreInteractions(itemLocationRepository);
     }
+
 
     @Test
     void shouldFindSuitableLocationsForItem() {
@@ -119,6 +128,7 @@ class ItemLocationServiceTest {
 
         verify(itemLocationRepository)
                 .findAllByItem_IdAndSuitableTrueAndLocation_ActiveTrue(2L);
+        verifyNoMoreInteractions(itemLocationRepository);
     }
 
     @Test
