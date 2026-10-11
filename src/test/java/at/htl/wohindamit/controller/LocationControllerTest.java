@@ -72,6 +72,39 @@ class LocationControllerTest {
         verifyNoMoreInteractions( locationService );
     }
 
+
+@Test
+void shouldReturnAllActiveLocationsWhenMultipleLocationsExist()
+        throws Exception {
+
+    LocationType locationType = new LocationType();
+    locationType.setName("Recycling Center");
+
+    Location firstLocation = createLocation(1L, locationType);
+
+    Location secondLocation = createLocation(2L, locationType);
+    secondLocation.setName("Second Recycling Center");
+    secondLocation.setAddress("Testgasse 2");
+    secondLocation.setPostalCode("1020");
+
+    when(locationService.findAllActive())
+            .thenReturn(List.of(firstLocation, secondLocation));
+
+    mockMvc.perform(get("/api/locations"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].id").value(1))
+            .andExpect(jsonPath("$[0].name").value("Test Recycling Center"))
+            .andExpect(jsonPath("$[1].id").value(2))
+            .andExpect(jsonPath("$[1].name").value("Second Recycling Center"))
+            .andExpect(jsonPath("$[1].address").value("Testgasse 2"))
+            .andExpect(jsonPath("$[1].postalCode").value("1020"));
+
+    verify(locationService).findAllActive();
+    verifyNoMoreInteractions(locationService);
+}
+
+
     @Test
     void shouldReturnEmptyListWhenNoActiveLocationsExist()
             throws Exception {
@@ -124,12 +157,20 @@ class LocationControllerTest {
 
         mockMvc.perform( get( "/api/locations/999" ) )
                 .andExpect( status().isNotFound() )
-                .andExpect( result ->
-                        org.junit.jupiter.api.Assertions.assertTrue(
-                                result.getResolvedException()
-                                        instanceof ResponseStatusException
-                        )
-                );
+.andExpect( result -> {
+    org.junit.jupiter.api.Assertions.assertTrue(
+            result.getResolvedException()
+                    instanceof ResponseStatusException
+    );
+
+    ResponseStatusException exception =
+            (ResponseStatusException) result.getResolvedException();
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+            "Location not found",
+            exception.getReason()
+    );
+});
 
         verify( locationService ).findById( 999L );
         verifyNoMoreInteractions( locationService );
