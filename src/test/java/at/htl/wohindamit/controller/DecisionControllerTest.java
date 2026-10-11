@@ -1,4 +1,3 @@
-
 package at.htl.wohindamit.controller;
 
 import at.htl.wohindamit.dto.DecisionResponse;
@@ -16,6 +15,8 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -61,7 +62,14 @@ class DecisionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.recommendationId").value(1))
                 .andExpect(jsonPath("$.action").value("REPAIR"))
-                .andExpect(jsonPath("$.title").value("Repair item"));
+                .andExpect(jsonPath("$.title").value("Repair item"))
+                .andExpect(jsonPath("$.description")
+                        .value("Test recommendation"))
+                .andExpect(jsonPath("$.reason")
+                        .value("The item can be repaired"));
+
+        verify(decisionService).evaluate(any());
+        verifyNoMoreInteractions(decisionService);
     }
 
     @Test
@@ -76,6 +84,9 @@ class DecisionControllerTest {
                                         + "\"answers\":{\"repairable\":false}}"
                         ))
                 .andExpect(status().isNotFound());
+
+        verify(decisionService).evaluate(any());
+        verifyNoMoreInteractions(decisionService);
     }
 
     @Test
@@ -98,5 +109,8 @@ class DecisionControllerTest {
                         jsonPath("$.error")
                                 .value("A category ID is required.")
                 );
+
+        verify(decisionService).evaluate(any());
+        verifyNoMoreInteractions(decisionService);
     }
 }
