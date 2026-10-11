@@ -1,7 +1,5 @@
-
 package at.htl.wohindamit.controller;
 
-import at.htl.wohindamit.dto.AnswerOptionResponse;
 import at.htl.wohindamit.entity.AnswerOption;
 import at.htl.wohindamit.entity.Question;
 import at.htl.wohindamit.service.AnswerOptionService;
@@ -17,6 +15,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -74,10 +75,43 @@ class AnswerOptionControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].value").value("true"))
                 .andExpect(jsonPath("$[0].label").value("Ja"))
+                .andExpect(jsonPath("$[0].orderIndex").value(1))
+                .andExpect(jsonPath("$[1].id").value(2))
                 .andExpect(jsonPath("$[1].value").value("false"))
-                .andExpect(jsonPath("$[1].label").value("Nein"));
+                .andExpect(jsonPath("$[1].label").value("Nein"))
+                .andExpect(jsonPath("$[1].orderIndex").value(2));
+
+        verify(questionService).findById(1L);
+        verify(answerOptionService).findByQuestionId(1L);
+        verifyNoMoreInteractions(questionService, answerOptionService);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenActiveQuestionHasNoOptions()
+            throws Exception {
+        Question question = new Question();
+        question.setId(2L);
+        question.setActive(true);
+
+        when(questionService.findById(2L))
+                .thenReturn(Optional.of(question));
+
+        when(answerOptionService.findByQuestionId(2L))
+                .thenReturn(List.of());
+
+        mockMvc.perform(
+                        get("/api/questions/2/answer-options")
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        verify(questionService).findById(2L);
+        verify(answerOptionService).findByQuestionId(2L);
+        verifyNoMoreInteractions(questionService, answerOptionService);
     }
 
     @Test
@@ -90,6 +124,10 @@ class AnswerOptionControllerTest {
                                 .accept(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNotFound());
+
+        verify(questionService).findById(99L);
+        verifyNoInteractions(answerOptionService);
+        verifyNoMoreInteractions(questionService);
     }
 
     @Test
@@ -106,5 +144,9 @@ class AnswerOptionControllerTest {
                                 .accept(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNotFound());
+
+        verify(questionService).findById(3L);
+        verifyNoInteractions(answerOptionService);
+        verifyNoMoreInteractions(questionService);
     }
 }
