@@ -11,7 +11,34 @@
     <h1>WoHinDamit?</h1>
     <p>Smart Recycling Vienna</p>
     <h2>Was möchtest du loswerden?</h2>
-    <input type="text" placeholder="z.B.Handy, Möbel, Kleidung" />
-    <button>suchen</button>
+    <div class="search-box">
+      <input
+        type="text"
+        id="itemInput"
+        placeholder="Was möchtest du entsorgen? "
+      />
+      <button id="searchButton">suchen</button>
+    </div>
+    <div id="condition-box">
+      <label for="condition"> Funktioniert der Gegenstand noch?</label>
+
+      <select id="condition">
+        <option value="ja">ja, Funktioniert</option>
+        <option value="nein">Nein, defekt</option>
+      </select>
+    </div>
+
+    <div id="repair-box">
+      <label for="repairable"> Ist der Gegenstand reparierbar? </label>
+
+      <select id="repairable">
+        <option value="ja">Ja, reparierbar</option>
+        <option value="nein">Nein, nicht reparierbar</option>
+      </select>
+    </div>
+
+    <p id="result"></p>
+
+    <script src="script.js"></script>
   </body>
 </html>
