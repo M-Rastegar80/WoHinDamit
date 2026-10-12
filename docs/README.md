@@ -28,3 +28,7 @@ Ein Spring-Boot-/PostgreSQL-Prototyp mit mehreren REST-Endpunkten und Tests exis
 1. Den Ordner `docs/` in das bestehende Repository kopieren bzw. die entsprechenden Dateien mit vorhandenen Dokumenten zusammenführen.
 2. Offene Entscheidungen in `phase-1-checklist.md` mit dem Team (insbesondere Mohamad) abstimmen.
 3. Erst nach Review das Datenmodell und den API-Vertrag als freigegeben markieren.
+
+## Local API preview
+
+See [local-preview.md](local-preview.md) for startup commands, optional demo data and verified scenarios.

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WoHinDamit?</title><link rel="stylesheet" href="css/style.css"><script src="script.js" defer></script></head>
+<body><main><h1>WoHinDamit?</h1><p>Smart Recycling Vienna</p>
+<h2>Was möchtest du loswerden?</h2>
+<p>Wähle eine Kategorie und beantworte die Fragen, um eine passende Empfehlung zu erhalten.</p>
+<form id="connection"><label for="apiUrl">Server-Adresse</label><input id="apiUrl" type="url" value="http://localhost:8080" required><button>Verbinden</button></form>
+<p id="status" role="status" aria-live="polite"></p>
+<form id="decision"><label for="category">Kategorie</label><select id="category" required disabled><option value="">Zuerst mit dem Server verbinden</option></select><div id="questions"></div><button id="submit" disabled>Empfehlung anzeigen</button></form>
+<section id="result" aria-live="polite" hidden></section>
+</main></body></html>
