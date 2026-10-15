@@ -5,6 +5,7 @@ The shared application is in `backend/`, based on the local Noushin backend snap
 Questions and recommendations come from the backend API. Mani's green background and typography are retained with responsive forms. Original frontend files are preserved in `reference/mani-frontend/`. The previous technical preview remains at `/preview/index.html`.
 
 - [Persian comparison and next steps](docs/comparison-fa.md)
+- [Project handoff for Chat, Work and future sessions](docs/PROJECT-HANDOFF-2026-10-15.md)
 - [Setup, password prompt and optional demo data](backend/docs/local-preview.md)
 
 ## Start
