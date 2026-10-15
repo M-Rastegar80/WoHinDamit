@@ -109,3 +109,72 @@ function updateRepairBox() {
 condition.addEventListener("change", updateRepairBox);
 
 updateRepairBox();
+
+const sammelstellen = [
+  {
+    name: "Mistplatz Beispiel",
+    bezirk: "Wien",
+    typ: "Elektrogeräte",
+  },
+  {
+    name: "Recyclingstelle Beispiel",
+    bezirk: "Wien",
+    typ: "Verpackung",
+  },
+  {
+    name: "Elektro Sammelstelle Beispiel",
+    bezirk: "Wien",
+    typ: "Elektrogeräte",
+  },
+];
+
+console.log("Sammelstellen:", sammelstellen);
+console.log("Name", sammelstellen[0].name);
+console.log("Zweite Sammelstelle:", sammelstellen[1].name);
+
+if (sammelstellen[0].typ === "Elektrogeräte") {
+  console.log("Elektrogeräte können hier abgegeben werden.");
+}
+
+const passendeStelle = sammelstellen.find(
+  (stelle) => stelle.typ === "Elektrogeräte",
+);
+
+const passendeStellen = sammelstellen.filter(
+  (stelle) => stelle.typ === "Elektrogeräte",
+);
+
+console.log("Alle passenden Sammelstellen:", passendeStellen);
+console.log("Gefundene Sammelstelle:", passendeStelle);
+console.log("Anzahl:", passendeStellen.length);
+
+const ersteStelle = sammelstellen.find(
+  (stelle) => stelle.typ === "Elektrogeräte",
+);
+
+const alleStellen = sammelstellen.filter(
+  (stelle) => stelle.typ === "Elektrogeräte",
+);
+
+console.log("Erste Stelle:", ersteStelle.name);
+console.log("Alle Stellen:", alleStellen.length);
+
+alleStellen.forEach((stelle) => {
+  console.log("Sammelstelle:", stelle.name);
+});
+
+const sammelstellenListe = document.getElementById("sammelstellenListe");
+
+function zeigeSammelstellen(typ) {
+  sammelstellenListe.textContent = "";
+
+  const passende = sammelstellen.filter((stelle) => stelle.typ === typ);
+
+  passende.forEach((stelle) => {
+    const eintrag = document.createElement("p");
+    eintrag.textContent = stelle.name;
+    sammelstellenListe.appendChild(eintrag);
+  });
+}
+
+zeigeSammelstellen("Elektrogeräte");
